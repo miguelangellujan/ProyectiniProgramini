@@ -1,16 +1,16 @@
 package es.uah.matcomp.mp.teoria.gui.mvc.javafx.proyectoprogramacion;
 
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Humano extends Thread {
     private final String id;
     private final Refugio refugio;
     private final ZonaRiesgo zonaRiesgo;
     private final List<Tunel> tuneles;
-    private boolean marcadoPorZombi = false;
-    private boolean vivo = true;  // Nuevo campo para estado
-    private Random random = new Random();
+    private final AtomicBoolean marcado = new AtomicBoolean(false);
+    private final AtomicBoolean vivo = new AtomicBoolean(true);
 
     public Humano(String id, Refugio refugio, ZonaRiesgo zonaRiesgo, List<Tunel> tuneles) {
         this.id = id;
@@ -19,55 +19,43 @@ public class Humano extends Thread {
         this.tuneles = tuneles;
     }
 
-    // Método que faltaba
-    public boolean estaVivo() {
-        return vivo;
-    }
-
-    // Método para cuando el humano muere
-    public void morir() {
-        this.vivo = false;
-    }
-
-    // ... resto de los métodos existentes
-    public String getIdHumano() {
-        return id;
-    }
-
-    public boolean estaMarcado() {
-        return marcadoPorZombi;
-    }
-
-    public void setMarcado(boolean marcado) {
-        this.marcadoPorZombi = marcado;
-    }
-
-    public boolean intentarDefenderse() {
-        return random.nextInt(3) < 2; // 2/3 de probabilidad
-    }
-
-    public Refugio getRefugio() {
-        return refugio;
-    }
-
     @Override
     public void run() {
-        Logger.log("Humano " + id + " INICIA su ciclo de vida");
-        while (vivo) {
+        refugio.agregarHumano(this);
+        while (!Thread.currentThread().isInterrupted() && vivo.get()) {
             try {
-                Logger.log("Humano " + id + " en Zona Común");
                 refugio.zonaComun(this);
-
-                Logger.log("Humano " + id + " preparándose para salir");
-                refugio.prepararParaSalida(this);
-
-                // ... resto del código
+                Tunel tunel = tuneles.get(ThreadLocalRandom.current().nextInt(tuneles.size()));
+                tunel.cruzar(this, true);
+                Future<Integer> resultado = zonaRiesgo.explorarAsCallable(this);
+                int comida = resultado.get();
+                if (comida > 0) {
+                    refugio.depositarComida(comida);
+                }
+                if (vivo.get()) {
+                    tunel.cruzar(this, false);
+                    refugio.descansar(this);
+                    refugio.comer(this);
+                    if (marcado.get()) {
+                        refugio.recuperarse(this);
+                        marcado.set(false);
+                    }
+                }
             } catch (InterruptedException e) {
-                Logger.log("Humano " + id + " INTERRUMPIDO");
                 Thread.currentThread().interrupt();
                 break;
+            } catch (ExecutionException e) {
+                e.printStackTrace();
             }
         }
-        Logger.log("Humano " + id + " TERMINA su ciclo");
+        refugio.removerHumano(this);
     }
+
+    public String getIdHumano() { return id; }
+    public boolean estaVivo() { return vivo.get(); }
+    public void morir() { vivo.set(false); }
+    public boolean estaMarcado() { return marcado.get(); }
+    public void setMarcado(boolean valor) { marcado.set(valor); }
+    public boolean intentarDefenderse() { return ThreadLocalRandom.current().nextInt(3) < 2; }
+    public Refugio getRefugio() { return refugio; }
 }
