@@ -6,26 +6,42 @@ public class Tunel {
     private final int id;
     private final Lock lock = new ReentrantLock(true);
     private final Condition grupoFormado = lock.newCondition();
-    private int humanosEsperando = 0;
+    private int esperando = 0;       // humanos esperando en el túnel
+    private int cruzado = 0;       // humanos del grupo actual que ya han cruzado
+    private boolean grupoCompleto = false;
 
     public Tunel(int id) {
         this.id = id;
     }
-
     public void cruzar(Humano humano, boolean saliendo) throws InterruptedException {
         lock.lock();
         try {
-            humanosEsperando++;
-            Logger.log(humano.getIdHumano() + " esperando en túnel " + id + " (" + (saliendo ? "saliendo" : "entrando") + ")");
-            while (humanosEsperando < 3) {
+            esperando++;
+            Logger.log(STR."\{humano.getIdHumano()} esperando en túnel \{id} (\{saliendo ? "saliendo" : "entrando"})");
+            // Esperar si hay grupo en curso
+            while (grupoCompleto) {// Comienza siendo falso
                 grupoFormado.await();
             }
-            grupoFormado.signalAll();
-            Logger.log(humano.getIdHumano() + " cruzando túnel " + id);
+
+            // Si hay 3 formamos grupo
+            if (esperando == 3) {
+                grupoCompleto = true;
+                grupoFormado.signalAll(); // despertar a los otros 2
+            } else {
+                while (!grupoCompleto) { //Equivale a while true
+                    grupoFormado.await();
+                }
+            }
+
+            // Una vez en el grupo, cruzamos de uno en uno
+            Logger.log(STR."\{humano.getIdHumano()} cruzando túnel \{id}");
             Thread.sleep(1000);
-            humanosEsperando--;
-            if (humanosEsperando == 0) {
-                grupoFormado.signalAll();
+            cruzado++;
+            if (cruzado == 3) {
+                esperando = 0;
+                cruzado = 0;
+                grupoCompleto = false;
+                grupoFormado.signalAll(); // permitir que otros formen grupo
             }
         } finally {
             lock.unlock();
