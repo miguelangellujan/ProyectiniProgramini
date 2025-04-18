@@ -1,50 +1,37 @@
 package es.uah.matcomp.mp.teoria.gui.mvc.javafx.proyectoprogramacion;
 
-import java.util.concurrent.locks.*;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Semaphore;
 
 public class Tunel {
     private final int id;
-    private final Lock lock = new ReentrantLock(true);
-    private final Condition grupoFormado = lock.newCondition();
-    private int esperando = 0;       // humanos esperando en el túnel
-    private int cruzado = 0;       // humanos del grupo actual que ya han cruzado
-    private boolean grupoCompleto = false;
+    private final CyclicBarrier barrera;
+    private final Semaphore pasoIndividual;
 
     public Tunel(int id) {
         this.id = id;
+        this.barrera = new CyclicBarrier(3);           // Se esperan 3 humanos
+        this.pasoIndividual = new Semaphore(1);        // Solo 1 humano puede cruzar a la vez
     }
+
     public void cruzar(Humano humano, boolean saliendo) throws InterruptedException {
-        lock.lock();
+        Logger.log(STR."\{humano.getIdHumano()} esperando en túnel \{id} (\{saliendo ? "saliendo" : "entrando"})");
+
         try {
-            esperando++;
-            Logger.log(STR."\{humano.getIdHumano()} esperando en túnel \{id} (\{saliendo ? "saliendo" : "entrando"})");
-            // Esperar si hay grupo en curso
-            while (grupoCompleto) {// Comienza siendo falso
-                grupoFormado.await();
-            }
-
-            // Si hay 3 formamos grupo
-            if (esperando == 3) {
-                grupoCompleto = true;
-                grupoFormado.signalAll(); // despertar a los otros 2
-            } else {
-                while (!grupoCompleto) { //Equivale a while true
-                    grupoFormado.await();
-                }
-            }
-
-            // Una vez en el grupo, cruzamos de uno en uno
+            // Esperar a que se forme un grupo de 3 humanos
+            barrera.await();
+        } catch (BrokenBarrierException e) {
+            Logger.log(STR."Error en la barrera del túnel \{id}");
+            return;
+        }
+        // Cruzar uno a uno usando un semáforo
+        pasoIndividual.acquire();
+        try {
             Logger.log(STR."\{humano.getIdHumano()} cruzando túnel \{id}");
-            Thread.sleep(1000);
-            cruzado++;
-            if (cruzado == 3) {
-                esperando = 0;
-                cruzado = 0;
-                grupoCompleto = false;
-                grupoFormado.signalAll(); // permitir que otros formen grupo
-            }
+            Thread.sleep(1000); // Simula el cruce del túnel
         } finally {
-            lock.unlock();
+            pasoIndividual.release();
         }
     }
 }
