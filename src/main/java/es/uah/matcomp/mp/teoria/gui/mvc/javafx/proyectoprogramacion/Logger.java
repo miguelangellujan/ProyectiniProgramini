@@ -13,7 +13,7 @@ public class Logger {
         try {
             writer.set(new PrintWriter(new FileWriter("apocalipsis.log", true)));
         } catch (IOException e) {
-            System.err.println("Error inicializando logger: " + e.getMessage());
+            System.err.println(STR."Error inicializando logger: \{e.getMessage()}");
         }
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             PrintWriter w = writer.get();
@@ -22,7 +22,7 @@ public class Logger {
     }
 
     public static synchronized void log(String mensaje) {
-        String logEntry = "[" + dateFormat.format(new Date()) + "] " + mensaje;
+        String logEntry = STR."[\{dateFormat.format(new Date())}] \{mensaje}";
         System.out.println(logEntry);
         PrintWriter w = writer.get();
         if (w != null) {

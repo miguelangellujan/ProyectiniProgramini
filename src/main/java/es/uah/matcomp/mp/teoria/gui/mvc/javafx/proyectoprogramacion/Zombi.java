@@ -2,18 +2,15 @@ package es.uah.matcomp.mp.teoria.gui.mvc.javafx.proyectoprogramacion;
 
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.ExecutorService;
 
 public class Zombi extends Thread {
     private final String id;
     private final ZonaRiesgo zonaRiesgo;
     private final AtomicInteger muertes = new AtomicInteger(0);
-    private final ExecutorService executorZombis;
 
-    public Zombi(String id, ZonaRiesgo zonaRiesgo, ExecutorService executorZombis) {
+    public Zombi(String id, ZonaRiesgo zonaRiesgo) {
         this.id = id;
         this.zonaRiesgo = zonaRiesgo;
-        this.executorZombis = executorZombis;
     }
 
     @Override
@@ -36,20 +33,27 @@ public class Zombi extends Thread {
     }
 
     private void atacar(Humano humano) throws InterruptedException {
-        Logger.log(id + " atacando a " + humano.getIdHumano());
+        Logger.log(String.format("%s atacando a %s", id, humano.getIdHumano()));
         Thread.sleep(ThreadLocalRandom.current().nextInt(500, 1501));
 
-        if (!humano.intentarDefenderse()) {
-            humano.morir();
-            muertes.incrementAndGet();
-            zonaRiesgo.registrarMuerte(id);
-            Logger.log(humano.getIdHumano() + " muerto. Renace como zombi");
+        synchronized (humano) {
+            if (!humano.estaVivo()) {
+                return; // ya fue atacado por otro zombi
+            }
 
-            String nuevoId = "Z" + humano.getIdHumano().substring(1);
-            executorZombis.execute(new Zombi(nuevoId, zonaRiesgo, executorZombis));
-        } else {
-            humano.setMarcado(true);
-            Logger.log(humano.getIdHumano() + " se defendió pero quedó marcado");
+            if (!humano.intentarDefenderse()) {
+                humano.morir();
+                muertes.incrementAndGet();
+                zonaRiesgo.registrarMuerte(id);
+                Logger.log(String.format("%s muerto. Renace como zombi", humano.getIdHumano()));
+
+                // Crear un nuevo zombi a partir del humano
+                String nuevoId = STR."Z\{humano.getIdHumano()}";
+                new Thread(new Zombi(nuevoId, zonaRiesgo)).start();
+            } else {
+                humano.setMarcado(true);
+                Logger.log(String.format("%s se defendió pero quedó marcado", humano.getIdHumano()));
+            }
         }
     }
 

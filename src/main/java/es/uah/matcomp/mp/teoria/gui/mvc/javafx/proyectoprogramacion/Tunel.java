@@ -19,17 +19,17 @@ public class Tunel {
         Logger.log(STR."\{humano.getIdHumano()} esperando en túnel \{id} (\{saliendo ? "saliendo" : "entrando"})");
 
         try {
-            // Esperar a que se forme un grupo de 3 humanos
             barrera.await();
         } catch (BrokenBarrierException e) {
-            Logger.log(STR."Error en la barrera del túnel \{id}");
+            Logger.log(STR."Error en la barrera del túnel \{id}, recreando...");
+            // Esto lo puedes dejar así si quieres que se ignore ese intento
             return;
         }
-        // Cruzar uno a uno usando un semáforo
+
         pasoIndividual.acquire();
         try {
             Logger.log(STR."\{humano.getIdHumano()} cruzando túnel \{id}");
-            Thread.sleep(1000); // Simula el cruce del túnel
+            Thread.sleep(1000);
         } finally {
             pasoIndividual.release();
         }

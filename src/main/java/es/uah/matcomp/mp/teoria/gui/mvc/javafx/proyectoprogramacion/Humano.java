@@ -1,6 +1,7 @@
 package es.uah.matcomp.mp.teoria.gui.mvc.javafx.proyectoprogramacion;
 
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -9,8 +10,9 @@ public class Humano extends Thread {
     private final Refugio refugio;
     private final ZonaRiesgo zonaRiesgo;
     private final List<Tunel> tuneles;
-    private final AtomicBoolean marcado = new AtomicBoolean(false);
-    private final AtomicBoolean vivo = new AtomicBoolean(true);
+    private final AtomicBoolean marcado = new AtomicBoolean(false);// comienzan sin marcar
+    private final AtomicBoolean vivo = new AtomicBoolean(true); //comienzan vivos
+    private final Random random=new Random();
 
     public Humano(String id, Refugio refugio, ZonaRiesgo zonaRiesgo, List<Tunel> tuneles) {
         this.id = id;
@@ -25,13 +27,17 @@ public class Humano extends Thread {
         while (!Thread.currentThread().isInterrupted() && vivo.get()) {
             try {
                 refugio.zonaComun(this);
-                Tunel tunel = tuneles.get(ThreadLocalRandom.current().nextInt(tuneles.size()));
+                Thread.sleep(1000+random.nextInt(1001));
+                Tunel tunel = tuneles.get(random.nextInt(tuneles.size()));
+
                 tunel.cruzar(this, true);
-                Future<Integer> resultado = zonaRiesgo.explorarAsCallable(this);
-                int comida = resultado.get();
+                int resultado = zonaRiesgo.explorar(this);
+                int comida = resultado;
+                if (!vivo.get()) break; // <--- Salir antes de seguir si murió
                 if (comida > 0) {
                     refugio.depositarComida(comida);
                 }
+
                 if (vivo.get()) {
                     tunel.cruzar(this, false);
                     refugio.descansar(this);
@@ -44,8 +50,6 @@ public class Humano extends Thread {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
-            } catch (ExecutionException e) {
-                e.printStackTrace();
             }
         }
         refugio.removerHumano(this);

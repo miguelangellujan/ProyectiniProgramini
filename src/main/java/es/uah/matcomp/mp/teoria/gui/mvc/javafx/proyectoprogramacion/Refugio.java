@@ -12,20 +12,18 @@ public class Refugio {
     private final ConcurrentLinkedQueue<Humano> humanosEnRefugio = new ConcurrentLinkedQueue<>();
 
     public void zonaComun(Humano humano) throws InterruptedException {
-        Logger.log(humano.getIdHumano() + " en zona común");
+        Logger.log(STR."\{humano.getIdHumano()} en zona común");
         Thread.sleep(ThreadLocalRandom.current().nextInt(1000, 2001));
     }
 
     public void descansar(Humano humano) throws InterruptedException {
         semaforoDescanso.acquire();
         try {
-            Logger.log(humano.getIdHumano() + " descansando");
+            Logger.log(STR."\{humano.getIdHumano()} descansando");
             Thread.sleep(ThreadLocalRandom.current().nextInt(2000, 4001));
         } finally {
-            semaforoDescanso.release();
-        }
+            semaforoDescanso.release();}
     }
-
     public void comer(Humano humano) throws InterruptedException {
         semaforoComedor.acquire();
         try {
@@ -38,36 +36,32 @@ public class Refugio {
             } finally {
                 lockComida.unlock();
             }
-            Logger.log(humano.getIdHumano() + " comiendo");
+            Logger.log(STR."\{humano.getIdHumano()} comiendo");
             Thread.sleep(ThreadLocalRandom.current().nextInt(3000, 5001));
         } finally {
             semaforoComedor.release();
         }
     }
-
     public void depositarComida(int cantidad) {
         lockComida.lock();
         try {
             comidaDisponible += cantidad;
             hayComida.signalAll();
-            Logger.log("Depositadas " + cantidad + " unidades de comida. Total: " + comidaDisponible);
+            Logger.log(STR."Depositadas \{cantidad} unidades de comida. Total: \{comidaDisponible}");
         } finally {
             lockComida.unlock();
         }
     }
-
     public void agregarHumano(Humano humano) {
         humanosEnRefugio.add(humano);
-        Logger.log(humano.getIdHumano() + " ha entrado al refugio");
+        Logger.log(STR."\{humano.getIdHumano()} ha entrado al refugio");
     }
-
     public void removerHumano(Humano humano) {
         humanosEnRefugio.remove(humano);
-        Logger.log(humano.getIdHumano() + " ha salido del refugio");
+        Logger.log(STR."\{humano.getIdHumano()} ha salido del refugio");
     }
-
     public void recuperarse(Humano humano) throws InterruptedException {
-        Logger.log(humano.getIdHumano() + " recuperándose en enfermería");
+        Logger.log(STR."\{humano.getIdHumano()} recuperándose en enfermería");
         Thread.sleep(2000);
     }
 }

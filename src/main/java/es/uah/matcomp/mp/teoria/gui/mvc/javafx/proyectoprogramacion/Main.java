@@ -2,7 +2,7 @@ package es.uah.matcomp.mp.teoria.gui.mvc.javafx.proyectoprogramacion;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Main {
     public static void main(String[] args) {
@@ -13,48 +13,23 @@ public class Main {
             tuneles.add(new Tunel(i));
         }
 
-        ExecutorService executorHumanos = Executors.newCachedThreadPool();
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        ExecutorService executorZombis = Executors.newCachedThreadPool();
-
-        // Paciente cero
-        executorZombis.execute(new Zombi("Z0000", zonaRiesgo, executorZombis));
+        // Paciente cero: Creando el primer zombi
+        new Zombi("Z0000", zonaRiesgo).start();
 
         // Crear humanos periódicamente
-        scheduler.scheduleAtFixedRate(() -> {
-            if (!executorHumanos.isShutdown()) {
-                String id = "H" + String.format("%04d", ThreadLocalRandom.current().nextInt(10000));
-                executorHumanos.execute(new Humano(id, refugio, zonaRiesgo, tuneles));
-            }
-        }, 0, ThreadLocalRandom.current().nextInt(500, 2001), TimeUnit.MILLISECONDS);
-
-        scheduler.schedule(() -> {
-            scheduler.shutdown();
-
-            // 1. Detener nuevos humanos
-            executorHumanos.shutdown();
-            try {
-                if (!executorHumanos.awaitTermination(30, TimeUnit.SECONDS)) {
-                    executorHumanos.shutdownNow();
+        Thread humanoCreator = new Thread(() -> {
+            while (true) {
+                try {
+                    if (ThreadLocalRandom.current().nextInt(500, 2001) > 1500) {
+                        String id = String.format("H%04d", ThreadLocalRandom.current().nextInt(10000));
+                        new Humano(id, refugio, zonaRiesgo, tuneles).start();
+                    }
+                    Thread.sleep(1000); // Periodo de espera para la creación de humanos
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
-            } catch (InterruptedException e) {
-                executorHumanos.shutdownNow();
-                Thread.currentThread().interrupt();
             }
-
-            // 2. Ahora sí: detener exploración porque ya no hay humanos usando el pool
-            zonaRiesgo.shutdown();
-
-            // 3. Detener zombis
-            executorZombis.shutdown();
-            try {
-                if (!executorZombis.awaitTermination(30, TimeUnit.SECONDS)) {
-                    executorZombis.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                executorZombis.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }, 10000, TimeUnit.MILLISECONDS);
+        });
+        humanoCreator.start();
     }
 }
