@@ -17,19 +17,18 @@ public class Main {
         new Zombi("Z0000", zonaRiesgo).start();
 
         // Crear humanos periódicamente
-        Thread humanoCreator = new Thread(() -> {
+
             while (true) {
                 try {
                     if (ThreadLocalRandom.current().nextInt(500, 2001) > 1500) {
                         String id = String.format("H%04d", ThreadLocalRandom.current().nextInt(10000));
-                        new Humano(id, refugio, zonaRiesgo, tuneles).start();
+                        Humano humano=new Humano(id,refugio,zonaRiesgo,tuneles);
+                        humano.start();
                     }
-                    Thread.sleep(1000); // Periodo de espera para la creación de humanos
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
             }
-        });
-        humanoCreator.start();
     }
 }

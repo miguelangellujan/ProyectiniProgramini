@@ -58,7 +58,6 @@ public class Refugio {
     }
     public void removerHumano(Humano humano) {
         humanosEnRefugio.remove(humano);
-        Logger.log(STR."\{humano.getIdHumano()} ha salido del refugio");
     }
     public void recuperarse(Humano humano) throws InterruptedException {
         Logger.log(STR."\{humano.getIdHumano()} recuperándose en enfermería");

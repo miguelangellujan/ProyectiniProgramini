@@ -57,7 +57,16 @@ public class Humano extends Thread {
 
     public String getIdHumano() { return id; }
     public boolean estaVivo() { return vivo.get(); }
-    public void morir() { vivo.set(false); }
+    public void morir() {
+        // Marca al humano como muerto (no se mueve ni interactúa más)
+        vivo.set(false);
+
+        // Eliminar al humano del refugio (y otras estructuras si es necesario)
+        refugio.removerHumano(this);
+
+        // Interrumpir el hilo del humano para detener cualquier acción pendiente
+        Thread.currentThread().interrupt();
+    }
     public boolean estaMarcado() { return marcado.get(); }
     public void setMarcado(boolean valor) { marcado.set(valor); }
     public boolean intentarDefenderse() { return ThreadLocalRandom.current().nextInt(3) < 2; }
