@@ -27,13 +27,22 @@ public class Humano extends Thread {
         while (!Thread.currentThread().isInterrupted() && vivo.get()) {
             try {
                 refugio.zonaComun(this);
-                Thread.sleep(1000+random.nextInt(1001));
+                Thread.sleep(1000 + random.nextInt(1001));
                 Tunel tunel = tuneles.get(random.nextInt(tuneles.size()));
 
                 tunel.cruzar(this, true);
-                int resultado = zonaRiesgo.explorar(this);
-                int comida = resultado;
-                if (!vivo.get()) {break;} // <--- Salir antes de seguir si murió
+                int comida = zonaRiesgo.explorar(this);
+                if (!vivo.get()) break;
+
+                if (estaMarcado()) {
+                    Logger.log(STR."\{id} está marcado y vuelve al refugio sin comida.");
+                    tunel.cruzar(this, false);
+                    refugio.descansar(this);
+                    refugio.recuperarse(this);
+                    setMarcado(false);
+                    continue;
+                }
+
                 if (comida > 0) {
                     refugio.depositarComida(comida);
                 }
@@ -42,10 +51,6 @@ public class Humano extends Thread {
                     tunel.cruzar(this, false);
                     refugio.descansar(this);
                     refugio.comer(this);
-                    if (marcado.get()) {
-                        refugio.recuperarse(this);
-                        marcado.set(false);
-                    }
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -54,6 +59,7 @@ public class Humano extends Thread {
         }
         refugio.removerHumano(this);
     }
+
 
     public String getIdHumano() { return id; }
     public boolean estaVivo() { return vivo.get(); }

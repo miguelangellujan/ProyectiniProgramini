@@ -2,7 +2,6 @@ package es.uah.matcomp.mp.teoria.gui.mvc.javafx.proyectoprogramacion;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
-import java.util.*;
 
 public class ZonaRiesgo {
     private final int numAreas;

@@ -34,16 +34,13 @@ public class Zombi extends Thread {
             }
         }
     }
-
     private synchronized void atacar(Humano humano) throws InterruptedException {
         Logger.log(String.format("%s atacando a %s", id, humano.getIdHumano()));
         Thread.sleep(ThreadLocalRandom.current().nextInt(500, 1501));
-
             // Verifica si el humano ya ha muerto
             if (!humano.estaVivo()) {
                 return; // El humano ya fue atacado anteriormente y está muerto
             }
-
             // El humano intenta defenderse
             if (!humano.intentarDefenderse()) {
                 humano.morir(); // El humano muere
