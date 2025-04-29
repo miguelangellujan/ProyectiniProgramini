@@ -33,7 +33,7 @@ public class Humano extends Thread {
                 tunel.cruzar(this, true);
                 int resultado = zonaRiesgo.explorar(this);
                 int comida = resultado;
-                if (!vivo.get()) break; // <--- Salir antes de seguir si murió
+                if (!vivo.get()) {break;} // <--- Salir antes de seguir si murió
                 if (comida > 0) {
                     refugio.depositarComida(comida);
                 }

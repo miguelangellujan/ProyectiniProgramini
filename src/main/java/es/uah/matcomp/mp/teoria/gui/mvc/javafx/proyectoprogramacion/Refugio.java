@@ -33,6 +33,7 @@ public class Refugio {
                     hayComida.await();
                 }
                 comidaDisponible--;
+                Logger.log(STR."\{humano.getIdHumano()} comiendo, Total comida: \{comidaDisponible}");
             } finally {
                 lockComida.unlock();
             }

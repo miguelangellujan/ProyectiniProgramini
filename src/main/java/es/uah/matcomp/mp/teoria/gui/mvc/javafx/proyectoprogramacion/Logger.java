@@ -1,33 +1,35 @@
 package es.uah.matcomp.mp.teoria.gui.mvc.javafx.proyectoprogramacion;
 
-import java.io.*;
-import java.text.SimpleDateFormat;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class Logger {
-    private static final AtomicReference<PrintWriter> writer = new AtomicReference<>();
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    private static PrintWriter writer;
 
     static {
         try {
-            writer.set(new PrintWriter(new FileWriter("apocalipsis.log", true)));
+            writer = new PrintWriter(new FileWriter("apocalipsis.log", true));
         } catch (IOException e) {
-            System.err.println(STR."Error inicializando logger: \{e.getMessage()}");
+            System.out.println("No se pudo abrir el archivo de log.");
         }
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            PrintWriter w = writer.get();
-            if (w != null) w.close();
-        }));
+        Runtime.getRuntime().addShutdownHook(new CerrarLogger());
     }
 
-    public static synchronized void log(String mensaje) {
-        String logEntry = STR."[\{dateFormat.format(new Date())}] \{mensaje}";
-        System.out.println(logEntry);
-        PrintWriter w = writer.get();
-        if (w != null) {
-            w.println(logEntry);
-            w.flush();
+    public static void log(String mensaje) {
+        String texto = STR."[\{new Date()}] \{mensaje}";
+        System.out.println(texto);
+        if (writer != null) {
+            writer.println(texto);
+            writer.flush();
+        }
+    }
+    private static class CerrarLogger extends Thread {
+        public void run() {
+            if (writer != null) {
+                writer.close();
+            }
         }
     }
 }
